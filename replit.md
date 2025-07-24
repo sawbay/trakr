@@ -112,4 +112,28 @@ Preferred communication style: Simple, everyday language.
 - **Tailwind**: Custom theme with CSS variables for consistent styling
 - **PostCSS**: Autoprefixer and Tailwind processing
 
-The application is designed to be easily deployable on platforms like Replit, with all necessary configuration files and a streamlined build process.
+The application is designed to be easily deployable on platforms like Replit, Vercel, Netlify, and other modern hosting platforms, with all necessary configuration files and a streamlined build process.
+
+## Vercel Deployment
+
+The project includes complete Vercel deployment configuration:
+
+### Quick Deploy
+```bash
+./deploy.sh
+```
+
+### Manual Deploy
+```bash
+npm run build
+npx vercel --prod
+```
+
+### Environment Variables (Optional)
+- `OPENROUTER_API_KEY`: For AI-powered transaction import
+- `DATABASE_URL`: PostgreSQL connection for persistent storage (uses in-memory storage if not provided)
+
+### Configuration Files
+- `vercel.json`: Vercel deployment configuration
+- `DEPLOYMENT.md`: Complete deployment guide
+- `deploy.sh`: Automated deployment script
