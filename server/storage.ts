@@ -1,5 +1,16 @@
 import { transactions, categories, type Transaction, type InsertTransaction, type Category, type InsertCategory } from "@shared/schema";
 
+export interface AnalyticsSummary {
+  totalBalance: number;
+  monthlyIncome: number;
+  monthlyExpenses: number;
+  topCategories: Array<{
+    category: string;
+    amount: number;
+    count: number;
+  }>;
+}
+
 export interface IStorage {
   // Transaction methods
   getTransactions(): Promise<Transaction[]>;
@@ -16,6 +27,7 @@ export interface IStorage {
   // Analytics methods
   getTransactionsByDateRange(startDate: Date, endDate: Date): Promise<Transaction[]>;
   getTransactionsByCategory(category: string): Promise<Transaction[]>;
+  getAnalyticsSummary(): Promise<AnalyticsSummary>;
 }
 
 export class MemStorage implements IStorage {
@@ -117,6 +129,52 @@ export class MemStorage implements IStorage {
   async getTransactionsByCategory(category: string): Promise<Transaction[]> {
     const allTransactions = await this.getTransactions();
     return allTransactions.filter(transaction => transaction.category === category);
+  }
+
+  async getAnalyticsSummary(): Promise<AnalyticsSummary> {
+    const allTransactions = await this.getTransactions();
+    
+    const totalBalance = allTransactions.reduce((sum, transaction) => {
+      return transaction.type === 'income' ? sum + transaction.amount : sum - transaction.amount;
+    }, 0);
+    
+    const currentMonth = new Date();
+    const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+    const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+    
+    const monthlyTransactions = allTransactions.filter(transaction => {
+      const transactionDate = new Date(transaction.date);
+      return transactionDate >= monthStart && transactionDate <= monthEnd;
+    });
+    
+    const monthlyIncome = monthlyTransactions
+      .filter(t => t.type === 'income')
+      .reduce((sum, t) => sum + t.amount, 0);
+      
+    const monthlyExpenses = monthlyTransactions
+      .filter(t => t.type === 'expense')
+      .reduce((sum, t) => sum + t.amount, 0);
+    
+    const categoryStats = new Map<string, { amount: number; count: number }>();
+    monthlyTransactions.forEach(transaction => {
+      const existing = categoryStats.get(transaction.category) || { amount: 0, count: 0 };
+      categoryStats.set(transaction.category, {
+        amount: existing.amount + transaction.amount,
+        count: existing.count + 1
+      });
+    });
+    
+    const topCategories = Array.from(categoryStats.entries())
+      .map(([category, stats]) => ({ category, ...stats }))
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 5);
+    
+    return {
+      totalBalance,
+      monthlyIncome,
+      monthlyExpenses,
+      topCategories
+    };
   }
 }
 

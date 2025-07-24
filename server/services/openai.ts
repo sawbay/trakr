@@ -14,6 +14,7 @@ export interface ParsedTransaction {
   description: string;
   category: string;
   type: 'income' | 'expense';
+  date: Date;
   confidence: number;
 }
 
@@ -68,14 +69,22 @@ export async function parseTransactionImage(base64Image: string): Promise<Parsed
 
     const result = JSON.parse(response.choices[0].message.content || "{}");
     
-    // Ensure we return an array
+    // Ensure we return an array with proper date handling
+    let transactions: any[] = [];
     if (Array.isArray(result)) {
-      return result;
+      transactions = result;
     } else if (result.transactions && Array.isArray(result.transactions)) {
-      return result.transactions;
+      transactions = result.transactions;
     } else {
       return [];
     }
+
+    // Add date field if missing and ensure proper typing
+    return transactions.map(transaction => ({
+      ...transaction,
+      date: transaction.date ? new Date(transaction.date) : new Date(),
+      amount: Number(transaction.amount) || 0
+    }));
   } catch (error) {
     console.error("Failed to parse transaction image:", error);
     throw new Error("Failed to parse transaction image with AI");
