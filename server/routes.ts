@@ -1,8 +1,24 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import multer from "multer";
 import { storage } from "./storage";
-import { insertTransactionSchema, aiImportSchema } from "@shared/schema";
-import { parseTransactionText } from "./services/openai";
+import { insertTransactionSchema, aiImportSchema, aiImageImportSchema } from "@shared/schema";
+import { parseTransactionText, parseTransactionImage } from "./services/openai";
+
+// Configure multer for memory storage
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'), false);
+    }
+  }
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Transaction routes
@@ -104,6 +120,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       res.status(400).json({ 
         message: "Failed to import transactions", 
+        error: error.message 
+      });
+    }
+  });
+
+  // AI Image Import route
+  app.post("/api/ai-import-image", upload.single('image'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No image file provided" });
+      }
+
+      // Convert buffer to base64
+      const base64Image = req.file.buffer.toString('base64');
+      const parsedTransactions = await parseTransactionImage(base64Image);
+      
+      // Create transactions in storage
+      const createdTransactions = [];
+      for (const parsed of parsedTransactions) {
+        const transactionData = {
+          amount: parsed.amount,
+          description: parsed.description,
+          category: parsed.category,
+          type: parsed.type,
+          date: new Date(), // Use current date, could be enhanced to parse dates from image
+        };
+        
+        const created = await storage.createTransaction(transactionData);
+        createdTransactions.push({ ...created, confidence: parsed.confidence });
+      }
+      
+      res.json({ 
+        success: true, 
+        transactions: createdTransactions,
+        count: createdTransactions.length 
+      });
+    } catch (error) {
+      res.status(400).json({ 
+        message: "Failed to import transactions from image", 
         error: error.message 
       });
     }

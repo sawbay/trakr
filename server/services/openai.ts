@@ -17,10 +17,74 @@ export interface ParsedTransaction {
   confidence: number;
 }
 
-export async function parseTransactionText(text: string): Promise<ParsedTransaction[]> {
+export async function parseTransactionImage(base64Image: string): Promise<ParsedTransaction[]> {
   try {
     const response = await openai.chat.completions.create({
       model: "openai/gpt-4o", // OpenRouter format for OpenAI's GPT-4o model
+      messages: [
+        {
+          role: "system",
+          content: `You are a financial transaction parser that analyzes receipt and transaction images. Extract individual transactions from the image.
+          
+          For each transaction, determine:
+          - amount (positive number, no currency symbols)
+          - description (brief, descriptive)
+          - category (one of: "Food & Dining", "Transportation", "Entertainment", "Shopping", "Bills & Utilities", "Healthcare", "Income")
+          - type ("income" or "expense")
+          - confidence (0-1, how confident you are in the parsing)
+          
+          Return a JSON array of transactions. If no transactions are found, return an empty array.
+          
+          Example output:
+          [
+            {
+              "amount": 12.50,
+              "description": "Lunch at Cafe",
+              "category": "Food & Dining",
+              "type": "expense",
+              "confidence": 0.95
+            }
+          ]`
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: "Please analyze this receipt/transaction image and extract all financial transactions with their details."
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: `data:image/jpeg;base64,${base64Image}`
+              }
+            }
+          ]
+        },
+      ],
+      response_format: { type: "json_object" },
+    });
+
+    const result = JSON.parse(response.choices[0].message.content || "{}");
+    
+    // Ensure we return an array
+    if (Array.isArray(result)) {
+      return result;
+    } else if (result.transactions && Array.isArray(result.transactions)) {
+      return result.transactions;
+    } else {
+      return [];
+    }
+  } catch (error) {
+    console.error("Failed to parse transaction image:", error);
+    throw new Error("Failed to parse transaction image with AI");
+  }
+}
+
+export async function parseTransactionText(text: string): Promise<ParsedTransaction[]> {
+  try {
+    const response = await openai.chat.completions.create({
+      model: "mistralai/mistral-small-3.2-24b-instruct:free",
       messages: [
         {
           role: "system",

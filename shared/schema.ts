@@ -41,4 +41,9 @@ export const aiImportSchema = z.object({
   text: z.string().min(1, "Transaction text is required"),
 });
 
+export const aiImageImportSchema = z.object({
+  image: z.string().min(1, "Image data is required"),
+});
+
 export type AIImportRequest = z.infer<typeof aiImportSchema>;
+export type AIImageImportRequest = z.infer<typeof aiImageImportSchema>;
