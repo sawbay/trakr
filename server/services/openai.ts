@@ -20,7 +20,8 @@ export interface ParsedTransaction {
 export async function parseTransactionImage(base64Image: string): Promise<ParsedTransaction[]> {
   try {
     const response = await openai.chat.completions.create({
-      model: "openai/gpt-4o", // OpenRouter format for OpenAI's GPT-4o model
+      model: "google/gemini-flash-1.5", // Free model for image processing
+      max_tokens: 1000, // Reduce token limit
       messages: [
         {
           role: "system",
@@ -84,7 +85,8 @@ export async function parseTransactionImage(base64Image: string): Promise<Parsed
 export async function parseTransactionText(text: string): Promise<ParsedTransaction[]> {
   try {
     const response = await openai.chat.completions.create({
-      model: "mistralai/mistral-small-3.2-24b-instruct:free",
+      model: "google/gemini-flash-1.5", // Free model for text processing
+      max_tokens: 1000, // Reduce token limit
       messages: [
         {
           role: "system",

@@ -15,7 +15,7 @@ const upload = multer({
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
     } else {
-      cb(new Error('Only image files are allowed'), false);
+      cb(null, false);
     }
   }
 });
@@ -50,7 +50,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const transaction = await storage.createTransaction(validatedData);
       res.status(201).json(transaction);
     } catch (error) {
-      res.status(400).json({ message: "Invalid transaction data", error: error.message });
+      res.status(400).json({ message: "Invalid transaction data", error: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 
@@ -64,7 +64,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json(transaction);
     } catch (error) {
-      res.status(400).json({ message: "Invalid transaction data", error: error.message });
+      res.status(400).json({ message: "Invalid transaction data", error: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 
@@ -120,7 +120,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       res.status(400).json({ 
         message: "Failed to import transactions", 
-        error: error.message 
+        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
@@ -159,7 +159,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       res.status(400).json({ 
         message: "Failed to import transactions from image", 
-        error: error.message 
+        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });

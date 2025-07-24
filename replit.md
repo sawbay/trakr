@@ -87,8 +87,11 @@ Preferred communication style: Simple, everyday language.
 - **lucide-react**: Icon library
 
 ### AI Integration
-- **OpenAI API**: GPT-4 model for transaction text parsing
-- **Natural Language Processing**: Extracts structured transaction data from unstructured text
+- **OpenRouter API**: Integration with multiple AI models through unified API
+- **Google Gemini Flash 1.5**: Free model used for both text and image processing
+- **Text Processing**: Extracts structured transaction data from natural language descriptions
+- **Image Processing**: OCR and transaction extraction from receipt images (JPEG/PNG support)
+- **Multimodal Support**: Handles both text input and image uploads for transaction import
 
 ## Deployment Strategy
 
